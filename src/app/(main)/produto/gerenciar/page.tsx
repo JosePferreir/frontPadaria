@@ -1,6 +1,6 @@
 "use client";
 import React, { ChangeEvent, useEffect, useState } from 'react';
-import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Stack, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from '@mui/material';
+import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Stack, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, FormControlLabel, Checkbox } from '@mui/material';
 import { Add, Edit, CloseOutlined as CloseOutlinedIcon, SettingsOutlined as SettingsOutlinedIcon } from '@mui/icons-material';
 import { Produto } from '@/model/Produto';
 import { getAllProdutos, inactivateProduto } from '@/services/produtoService'; 
@@ -16,23 +16,36 @@ function GerenciarProdutos() {
     const [selectedItem, setSelectedItem] = useState<Produto | null>(null);
     const [openModal, setOpenModal] = useState(false);
     const [editItem, setEditItem] = useState<Produto | null>(null);
+    const [showInactive, setShowInactive] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchData = async () => {
             const result = await getAllProdutos();
             setProdutoList(result);
-            setFilteredProdutoList(result);
+            setFilteredProdutoList(sortAndFilter(result, searchTerm, showInactive));
         };
         fetchData();
     }, []);
 
+    const sortAndFilter = (data: Produto[], term: string, showInactive: boolean) => {
+        return data
+            .filter(item =>
+                item.nome.toLowerCase().includes(term)
+            )
+            .filter(item => showInactive || item.ativo)
+            .sort((a, b) => Number(b.ativo) - Number(a.ativo));
+    };
+
+    const handleShowInactiveChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const updatedShowInactive = event.target.checked;
+        setShowInactive(updatedShowInactive);
+        setFilteredProdutoList(sortAndFilter(produtoList, searchTerm, updatedShowInactive));
+    };
+
     const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value.toLowerCase();
         setSearchTerm(value);
-        const filteredData = produtoList.filter(item =>
-            item.nome.toLowerCase().includes(value)
-        );
-        setFilteredProdutoList(filteredData);
+        setFilteredProdutoList(sortAndFilter(produtoList, value, showInactive));
     };
 
     const handleInactivateActivate = (item: Produto) => {
@@ -96,6 +109,10 @@ function GerenciarProdutos() {
                     onChange={handleSearch} 
                     fullWidth 
                     margin="normal"
+                />
+                <FormControlLabel
+                    control={<Checkbox checked={showInactive} onChange={handleShowInactiveChange} />}
+                    label="Mostrar Inativos"
                 />
                 <TableContainer component={Paper} sx={{ maxHeight: '70vh' }}>
                     <Table stickyHeader>

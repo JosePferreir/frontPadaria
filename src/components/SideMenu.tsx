@@ -17,6 +17,7 @@ import { Box, Toolbar } from '@mui/material';
 import { ThemeProvider } from '@emotion/react';
 import {laranja} from '@/style/theme';
 import { useRouter} from 'next/navigation';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 
 const SideMenu: React.FC = () => {
   const [open, setOpen] = React.useState<string | null>(null);
@@ -69,7 +70,7 @@ const SideMenu: React.FC = () => {
                     </Collapse>
                     <ListItem button onClick={() => handleClick('produtos')}>
                         <ListItemIcon>
-                            <StoreIcon />
+                            <StorefrontIcon />
                         </ListItemIcon>
                         <ListItemText primary="Produtos" />
                         {open === 'produtos' ? <ExpandLess /> : <ExpandMore />}

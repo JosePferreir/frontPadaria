@@ -79,9 +79,6 @@ function Login() {
                         <Typography variant="body2" component="div" sx={{ pt: 2 }}>
                             <Button onClick={logar} variant="contained">Logar</Button>
                         </Typography>
-                        <Typography variant="body2" component="p" sx={{ pt: 2 }}>
-                        Não possui acesso? <Link legacyBehavior href="/register"><a style={{ color: '#4285F4' }}>Cadastre-se</a></Link>
-                        </Typography>
                     </Box>
                 </ThemeProvider>
                 <Snackbar open={open} autoHideDuration={5000} onClose={() => setOpen(false)}>

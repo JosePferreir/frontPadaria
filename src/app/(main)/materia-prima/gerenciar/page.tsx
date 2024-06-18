@@ -1,6 +1,6 @@
 "use client";
 import React, { ChangeEvent, useEffect, useState } from 'react';
-import { Container, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Paper, Box, Stack, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from '@mui/material';
+import { Container, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Paper, Box, Stack, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, FormControlLabel, Checkbox } from '@mui/material';
 import { Add, Edit, Delete, Check } from '@mui/icons-material';
 import { MateriaPrima } from '@/model/MateriaPrima';
 import { getAllMp, inactivate } from '@/services/materiaPrimaService';
@@ -9,6 +9,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import ModalGerenciarMP from './modal-gerenciar';
 import EditCalendarOutlinedIcon from '@mui/icons-material/EditCalendarOutlined';
+import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 
 function GerenciarMP() {
     const [searchTerm, setSearchTerm] = useState<string>('');
@@ -18,46 +19,60 @@ function GerenciarMP() {
     const [selectedItem, setSelectedItem] = useState<MateriaPrima | null>(null);
     const [openModal, setOpenModal] = useState(false);
     const [editItem, setEditItem] = useState<MateriaPrima | null>(null);
+    const [showInactive, setShowInactive] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchData = async () => {
             const result = await getAllMp();
             setMateriaPrimaList(result);
             setFilteredMateriaPrimaList(result);
+            setFilteredMateriaPrimaList(sortAndFilter(result, searchTerm, showInactive));
         };
         fetchData();
     }, []);
 
+    const sortAndFilter = (data: MateriaPrima[], term: string, showInactive: boolean) => {
+        return data
+            .filter(item =>
+                item.descricao.toLowerCase().includes(term) ||
+                item.unidadeComprada.toLowerCase().includes(term) ||
+                item.unidadeUtilizada.toLowerCase().includes(term)
+            )
+            .filter(item => showInactive || item.ativo)
+            .sort((a, b) => Number(b.ativo) - Number(a.ativo));
+    };
+
+    const handleShowInactiveChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const updatedShowInactive = event.target.checked;
+        setShowInactive(updatedShowInactive);
+        setFilteredMateriaPrimaList(sortAndFilter(materiaPrimaList, searchTerm, updatedShowInactive));
+    };
+
     const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value.toLowerCase();
         setSearchTerm(value);
-        const filteredData = materiaPrimaList.filter(item =>
-            item.descricao.toLowerCase().includes(value) ||
-            item.unidadeComprada.toLowerCase().includes(value) ||
-            item.unidadeUtilizada.toLowerCase().includes(value)
-        );
-        setFilteredMateriaPrimaList(filteredData);
+        setFilteredMateriaPrimaList(sortAndFilter(materiaPrimaList, value, showInactive));
     };
 
-    const handleInactivate = (item: MateriaPrima) => {
+    const handleInactivateActivate = (item: MateriaPrima) => {
         setSelectedItem(item);
         setOpen(true);
-    };
+    }
 
     const handleClose = () => {
         setOpen(false);
         setSelectedItem(null);
     };
 
-    const handleConfirmInactivate = async () => {
+    const handleConfirmInactivateActivate = async () => {
         if (selectedItem) {
             await inactivate(selectedItem.id!);
             handleClose();
             const result = await getAllMp();
             setMateriaPrimaList(result);
-            setFilteredMateriaPrimaList(result.filter(item => item.descricao.toLowerCase().includes(searchTerm)));
-        }
+            setFilteredMateriaPrimaList(sortAndFilter(result, searchTerm, showInactive));        }
     };
+    
 
     const closeModal = async () => {
         setOpenModal(false);
@@ -101,6 +116,10 @@ function GerenciarMP() {
                     fullWidth 
                     margin="normal"
                 />
+                <FormControlLabel
+                    control={<Checkbox checked={showInactive} onChange={handleShowInactiveChange} />}
+                    label="Mostrar Inativos"
+                />
                 <TableContainer component={Paper} sx={{ maxHeight: '70vh' }}>
                     <Table stickyHeader>
                         <TableHead>
@@ -121,9 +140,15 @@ function GerenciarMP() {
                                         <Button variant="contained" color="warning" sx={{ mr: 1 }} onClick={() => handleEdit(item)}>
                                             <Edit />
                                         </Button>
-                                        <Button variant="contained" color="error" onClick={() => handleInactivate(item)}>
-                                            <CloseOutlinedIcon />
-                                        </Button>
+                                        {item.ativo ? (
+                                            <Button onClick={() => handleInactivateActivate(item)} variant="contained" color="error">
+                                                <CloseOutlinedIcon />
+                                            </Button>
+                                        ) : (
+                                            <Button onClick={() => handleInactivateActivate(item)} variant="contained" color="success">
+                                                <CheckOutlinedIcon />
+                                            </Button>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -140,18 +165,18 @@ function GerenciarMP() {
                 open={open}
                 onClose={handleClose}
             >
-                <DialogTitle>Confirmar Inativação</DialogTitle>
+                <DialogTitle>Confirmar {selectedItem?.ativo ? 'Inativação' : 'Ativação'}</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Tem certeza que deseja inativar a matéria-prima {selectedItem?.descricao}?
+                        Tem certeza que deseja {selectedItem?.ativo ? 'inativar' : 'ativar'} a matéria-prima {selectedItem?.descricao}?
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose} color="primary" variant="contained">
                         Cancelar
                     </Button>
-                    <Button onClick={handleConfirmInactivate} color="error" variant="contained" autoFocus>
-                        Inativar
+                    <Button onClick={handleConfirmInactivateActivate} color={selectedItem?.ativo ? "error" : "success"} variant="contained" autoFocus>
+                        {selectedItem?.ativo ? 'Inativar' : 'Ativar'}
                     </Button>
                 </DialogActions>
             </Dialog>
