@@ -89,6 +89,26 @@ const getAllEstoqueProduto = async () => {
 
 }
 
+const saveCompraProduto = async (estoqueProdutoList: EstoqueProduto[]): Promise<string> => {
+    try {
+        const response = await api.post('/estoque_produto/save_compra', estoqueProdutoList);
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao salvar estoque produto:', error);
+        throw error;
+    }
+}
+const editEstoqueProduto = async (estoqueProduto: EstoqueProduto): Promise<string> => {
+    try {
+        const response = await api.put(`/estoque_produto/update/${estoqueProduto.id}`, estoqueProduto);
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao editar estoque produto:', error);
+        throw error;
+    }
+
+}
+
 export {
     getAllProdutos,
     saveProduto,
@@ -97,5 +117,7 @@ export {
     editProduto,
     getAllProdutosAtivos,
     saveEstoqueProduto,
-    getAllEstoqueProduto
+    getAllEstoqueProduto,
+    saveCompraProduto,
+    editEstoqueProduto
 }

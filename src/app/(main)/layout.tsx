@@ -24,7 +24,6 @@ export default function RootLayout({
 
     useEffect(() => {
         const token = sessionStorage.getItem('token');
-        console.log('Token recuperado do sessionStorage:', token);
         if(!token) {
             router.push('/login');
         }

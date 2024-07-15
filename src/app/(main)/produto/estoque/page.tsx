@@ -3,32 +3,36 @@ import React, { ChangeEvent, useEffect, useState } from 'react';
 import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Stack, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from '@mui/material';
 import { Add, Edit, CloseOutlined as CloseOutlinedIcon, SettingsOutlined as SettingsOutlinedIcon } from '@mui/icons-material';
 import { Produto } from '@/model/Produto';
-import { getAllEstoqueProduto, getAllProdutos, inactivateProduto } from '@/services/produtoService'; 
+import { editEstoqueProduto, getAllEstoqueProduto, getAllProdutos, inactivateProduto } from '@/services/produtoService'; 
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import EditCalendarOutlinedIcon from '@mui/icons-material/EditCalendarOutlined';
 import { EstoqueProduto } from '@/model/EstoqueProduto';
 import ModalEstoqueProduto from './modar-adicionar';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import ModalCompraProduto from './modal-compra';
 
 function GerenciarProdutos() {
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [produtoList, setProdutoList] = useState<Produto[]>([]);
     const [filteredProdutoList, setFilteredProdutoList] = useState<Produto[]>([]);
     const [open, setOpen] = useState(false);
-    const [selectedItem, setSelectedItem] = useState<Produto | null>(null);
     const [openModal, setOpenModal] = useState(false);
-    const [editItem, setEditItem] = useState<Produto | null>(null);
 
     const [estoqueProdutoList, setEstoqueProdutoList] = useState<EstoqueProduto[]>([]);
     const [filteredEstoqueProdutoList, setFilteredEstoqueProdutoList] = useState<EstoqueProduto[]>([]);
     const [openModalProducao, setOpenModalProducao] = useState(false);
+    const [openModalCompra, setOpenModalCompra] = useState(false);
+    const [editItem, setEditItem] = useState<EstoqueProduto | null>(null);
+    const [openModalEdit, setOpenModalEdit] = useState(false);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            const result = await getAllEstoqueProduto();
+
+    const fetchData = async () => {
+        const result = await getAllEstoqueProduto();
             setEstoqueProdutoList(result);
             setFilteredEstoqueProdutoList(result);
-        };
+    };
+
+    useEffect(() => {
         fetchData();
     }, []);
 
@@ -41,15 +45,12 @@ function GerenciarProdutos() {
         setFilteredProdutoList(filteredData);
     };
 
-    const handleInactivateActivate = (item: Produto) => {
-        setSelectedItem(item);
-        setOpen(true);
-    };
-
     const handleClose = () => {
         setOpen(false);
         setOpenModalProducao(false);
-        setSelectedItem(null);
+        setOpenModalCompra(false);
+        setOpenModalEdit(false);
+        fetchData();
     };
 
     const handleOpenProducao = () => {
@@ -58,15 +59,11 @@ function GerenciarProdutos() {
         //setOpenModal(true);
     }
 
-    const handleConfirmInactivateActivate = async () => {
-        if (selectedItem) {
-            await inactivateProduto(selectedItem.id!);
-            handleClose();
-            const result = await getAllProdutos();
-            setProdutoList(result);
-            setFilteredProdutoList(result.filter((item: { nome: string; }) => item.nome.toLowerCase().includes(searchTerm)));
-        }
-    };
+    const handleOpenCompra= () => {
+        setOpen(false);
+        setOpenModalCompra(true);
+    }
+
 
     const closeModal = async () => {
         setOpenModal(false);
@@ -76,9 +73,18 @@ function GerenciarProdutos() {
     };
 
     const handleEdit = (item: EstoqueProduto) => {
-        //setEditItem(item);
-        setOpenModal(true);
+        setEditItem(item);
+        setOpenModalEdit(true);
     };
+
+    const confirmEdit = async () => {
+        if (editItem) {
+            await editEstoqueProduto(editItem);
+            setEditItem(null);
+            fetchData();
+            setOpenModalEdit(false);
+        }
+    }
 
     return (
         <Box sx={{ display: 'flex', justifyContent: 'space-evenly', flexGrow: 1, gap: 2, padding: 2, margin: 2, bgcolor: '#fff', height: '87%' }}>
@@ -147,6 +153,11 @@ function GerenciarProdutos() {
             >
 
             </ModalEstoqueProduto>
+            <ModalCompraProduto
+                open={openModalCompra}
+                onClose={handleClose}>
+                
+            </ModalCompraProduto>
             <Dialog
                 open={open}
                 onClose={handleClose}
@@ -191,6 +202,7 @@ function GerenciarProdutos() {
                             },
                         }}
                         elevation={3}
+                        onClick={handleOpenCompra}
                     >
                         <Typography variant="h6" sx={{ marginTop: 1, color: '#D2691E' }}>
                             Compra
@@ -204,6 +216,50 @@ function GerenciarProdutos() {
                     </Button>
                 </DialogActions>
             </Dialog>
+            {editItem && (
+                <Dialog open={openModalEdit} onClose={handleClose} maxWidth="sm" fullWidth>
+                    <DialogTitle>Editar estoque {editItem.produto?.nome}</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            label="Quantidade"
+                            name="quantidade"
+                            type="number"
+                            value={editItem.quantidade || ''}
+                            onChange={(e) => setEditItem({ ...editItem, quantidade: parseInt(e.target.value) })}
+                            fullWidth
+                            margin="normal"
+                        />
+                        <TextField
+                            label="Validade"
+                            name="validade"
+                            type="date"
+                            value={editItem.validade ? editItem.validade.toISOString().substring(0, 10) : ''}
+                            onChange={(e) => setEditItem({ ...editItem, validade: new Date(e.target.value) })}
+                            fullWidth
+                            margin="normal"
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                        />
+                        <TextField
+                            label="Data criação"
+                            name="dataCriacao"
+                            type="date"
+                            value={editItem.dataCriacao ? editItem.dataCriacao.toISOString().substring(0, 10) : ''}
+                            onChange={(e) => setEditItem({ ...editItem, dataCriacao: new Date(e.target.value) })}
+                            fullWidth
+                            margin="normal"
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button variant="contained" color="success" onClick={confirmEdit}>Editar</Button>
+                        <Button variant="contained" color="error" onClick={handleClose}>Cancelar</Button>
+                    </DialogActions>
+                </Dialog>
+            )}
         </Box>
     );
 }

@@ -77,10 +77,10 @@ const SideMenu: React.FC = () => {
                     </ListItem>
                     <Collapse in={open === 'produtos'} timeout="auto" unmountOnExit>
                         <List component="div" disablePadding>
-                            <ListItem button sx={{ pl: 4 }}>
+                            <ListItem button sx={{ pl: 4 }} onClick={() => goTo('/produto/gerenciar')}>
                                 <ListItemText primary="Gerenciar" />
                             </ListItem>
-                            <ListItem button sx={{ pl: 4 }}>
+                            <ListItem button sx={{ pl: 4 }} onClick={() => goTo('/produto/estoque')}>
                                 <ListItemText primary="Estoque" />
                             </ListItem>
                         </List>
